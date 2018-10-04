@@ -36,36 +36,40 @@ class CaseInsensitiveDict(dict):
 
 class CameraData(object):
 	def __init__(self,db={}):
-		self.re_vertex = re.compile('\(-?[0-9]+,-?[0-9]+\)')
-		self.re_street = re.compile('\"[a-z ]+\"')
+		self.re_vertex = re.compile(r'(-?[0-9]+,-?[0-9]+)')
+		self.re_street = re.compile(r'\"[a-z ]+\"',re.I)
 		self.db = db
 	
-	def add(self, arg_list):
-		street = self.re_street.match(arg_list)
-		print(street)
-		if street != None:
+	def add(self, arg):
+		sresult = self.re_street.match(arg)
+		
+		if sresult != None:
 			vertex_list = []
+			street = sresult.group()
+			print(street)
 		else:
-			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg_list))
+			errprt("Invalid 'add' Command","Cannot find street name")
 			return
 		
-		if self.re_vertex.match(arg_list):
-			vertex_list.extend(self.re_vertex.finditer(arg_list))
+		vresult = self.re_vertex.match(arg)
+		print(vresult)
+		if vresult != None:
+			vertex_list.extend(self.re_vertex.finditer(arg))
 		else:
-			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg_list))
+			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg))
 			return
 				
 		self.db[street] = vertex_list
 
-	def change(self, arg_list):
-		street = self.re_street.match(arg_list)
+	def change(self, arg):
+		street = self.re_street.match(arg)
 		if street != None:
 			if self.db.has_key(street):
 				vertex_list = []
 				if self.re_vertex.match(arg):
 					vertex_list.extend(self.re_vertex.finditer(arg))
 				else:
-					errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg))
+					errprt("Invalid 'change' Command","The format of argument {0} is invalid".format(arg))
 					db[street] = vertex_list
 			else:
 				errprt("Street Not Found","Street {0} does NOT exist in the system or it has already been removed".format(street))
@@ -83,6 +87,7 @@ class CameraData(object):
 			errprt("Invalid Argument", "Format for street argument is invalid")
 
 	def graph(self):
+		#TODO Get Graph
 		print("???")
 
 	
