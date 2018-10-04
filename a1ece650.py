@@ -2,6 +2,7 @@
 import sys
 import re
 
+#Customized Dict Class to handle case
 class CaseInsensitiveDict(dict):
 	@classmethod
 	def _k(cls, key):
@@ -34,27 +35,36 @@ class CaseInsensitiveDict(dict):
 			v = super(CaseInsensitiveDict, self).pop(k)
 			self.__setitem__(k, v)
 
+#Data Processing Class
 class CameraData(object):
 	def __init__(self,db={}):
-		self.re_vertex = re.compile(r'(-?[0-9]+,-?[0-9]+)')
+		self.re_vertex = re.compile(r'\(-?[0-9 ]+,-?[0-9 ]+\)')
 		self.re_street = re.compile(r'\"[a-z ]+\"',re.I)
 		self.db = db
+		
+		self.intersections = set([])
+		self.vertices = {}
+		self.edges = set([])
+		
 	
 	def add(self, arg):
-		sresult = self.re_street.match(arg)
+		sresult = self.re_street.match(arg,2)
 		
 		if sresult != None:
-			vertex_list = []
-			street = sresult.group()
-			print(street)
+			street = sresult.group().strip('"')
+			if not self.db.has_key(street):
+				vertex_list = []
+			else:
+				errprt("Invalid 'add' Command","Street Exists in system")
+				return
 		else:
 			errprt("Invalid 'add' Command","Cannot find street name")
 			return
 		
-		vresult = self.re_vertex.match(arg)
-		print(vresult)
+		vresult = self.re_vertex.search(arg)
 		if vresult != None:
-			vertex_list.extend(self.re_vertex.finditer(arg))
+			vertex_list.extend(self.re_vertex.findall(arg.replace(' ',"")))
+			print(vertex_list)
 		else:
 			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg))
 			return
@@ -62,37 +72,45 @@ class CameraData(object):
 		self.db[street] = vertex_list
 
 	def change(self, arg):
-		street = self.re_street.match(arg)
-		if street != None:
+		sresult = self.re_street.match(arg,2)
+		if sresult != None:
+			street = sresult.group().strip('"')
 			if self.db.has_key(street):
 				vertex_list = []
-				if self.re_vertex.match(arg):
-					vertex_list.extend(self.re_vertex.finditer(arg))
+				vresult = self.re_vertex.search(arg)
+				if vresult != None:
+					vertex_list.extend(self.re_vertex.findall(arg.replace(' ',"")))
+					self.db[street] = vertex_list
 				else:
 					errprt("Invalid 'change' Command","The format of argument {0} is invalid".format(arg))
-					db[street] = vertex_list
+					return
 			else:
 				errprt("Street Not Found","Street {0} does NOT exist in the system or it has already been removed".format(street))
+				return
 		else:
 			errprt("Invalid Argument", "Format for street argument is invalid")
+			return
 
 
-	def remove(self, street):
-		if self.re_street.match(street):
+	def remove(self, arg):
+		sresult = self.re_street.match(arg,2)
+		if sresult != None:
+			street = sresult.group().strip('"')
 			if self.db.has_key(street):
 				del self.db[street]
 			else:
 				errprt("Street Not Found","Street {0} does NOT exist in the system or it has already been removed".format(street))
 		else:
-			errprt("Invalid Argument", "Format for street argument is invalid")
+			errprt("Invalid Argument", "Format for remove argument is invalid")
 
 	def graph(self):
-		#TODO Get Graph
-		print("???")
+		print()
 
 	
 #Global Function
+#act like exception
 def errprt(msg,reason):
+	#TODO use exception instead
 	print("Error: {0}. Possible Reason: {1}".format(msg,reason))
 	
 def helpprt():
@@ -108,18 +126,16 @@ def initialization():
 def main_loop(data):
 	is_quit = False
 	while not is_quit:
-		
-		command = raw_input('>> ')
+		command = raw_input('>> ').strip()
 		cmd_list = command.split(' ')
 		#for cmd in commands:
 		#	cmd_list = list.append(cmd)
 		
-		print(cmd_list)
 		if((cmd_list[0]=='a') & (len(cmd_list)>2)):
 			data.add(command)
 		elif((cmd_list[0]=='c') & (len(cmd_list)>2)):
 			data.change(command)
-		elif((cmd_list[0]=='r') & (len(cmd_list)==2)):
+		elif(cmd_list[0]=='r'):
 			data.remove(command)
 		elif((cmd_list[0]=='g') & (len(cmd_list)==1)):
 			data.graph()
