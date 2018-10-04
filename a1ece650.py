@@ -41,7 +41,7 @@ class Point(object):
 		self.y = float(y)
 		
 	def __repr__(self):
-		return "({0:.2f},{1:.2f})".format(self.x,self.y)
+		return '({0:.2f},{1:.2f})'.format(self.x,self.y)
 
 #Data Processing Class
 class CameraData(object):
@@ -63,21 +63,21 @@ class CameraData(object):
 			if not self.db.has_key(street):
 				coordinate_list = []
 			else:
-				errprt("Invalid 'add' Command","Street Exists in system")
+				errprt('Invalid 'add' Command','Street Exists in system')
 				return
 		else:
-			errprt("Invalid 'add' Command","Cannot find street name")
+			errprt('Invalid 'add' Command','Cannot find street name')
 			return
 		
 		vresult = self.re_coordinate.search(arg)
 		if vresult != None:
-			tmp_list.extend(self.re_coordinate.findall(arg.replace(' ',"")))
+			tmp_list.extend(self.re_coordinate.findall(arg.replace(' ','')))
 			for coordinate in tmp_list:
 				x,y = coordinate.replace('(','').replace(')','').split(',')
 				coordinate_list.extend(Point(x,y))
 			print(coordinate_list)
 		else:
-			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg))
+			errprt('Invalid 'add' Command','The format of argument {0} is invalid'.format(arg))
 			return
 				
 		self.db[street] = coordinate_list
@@ -90,21 +90,20 @@ class CameraData(object):
 				coordinate_list = []
 				vresult = self.re_coordinate.search(arg)
 				if vresult != None:
-					tmp_list.extend(self.re_coordinate.findall(arg.replace(' ',"")))
+					tmp_list.extend(self.re_coordinate.findall(arg.replace(' ','')))
 					for coordinate in tmp_list:
 						x,y = coordinate.replace('(','').replace(')','').split(',')
 						coordinate_list.extend(Point(x,y))
 					self.db[street] = coordinate_list
 				else:
-					errprt("Invalid 'change' Command","The format of argument {0} is invalid".format(arg))
+					errprt('Invalid 'change' Command','The format of argument {0} is invalid'.format(arg))
 					return
 			else:
-				errprt("Street Not Found","Street {0} does NOT exist in the system or it has already been removed".format(street))
+				errprt('Street Not Found','Street {0} does NOT exist in the system or it has already been removed'.format(street))
 				return
 		else:
-			errprt("Invalid Argument", "Format for street argument is invalid")
+			errprt('Invalid Argument', 'Format for street argument is invalid')
 			return
-
 
 	def remove(self, arg):
 		sresult = self.re_street.match(arg,2)
@@ -113,13 +112,51 @@ class CameraData(object):
 			if self.db.has_key(street):
 				del self.db[street]
 			else:
-				errprt("Street Not Found","Street {0} does NOT exist in the system or it has already been removed".format(street))
+				errprt('Street Not Found','Street {0} does NOT exist in the system or it has already been removed'.format(street))
 		else:
-			errprt("Invalid Argument", "Format for remove argument is invalid")
+			errprt('Invalid Argument', 'Format for remove argument is invalid')
 
 	def graph(self):
+		self.intersections = set([])
+		self.edges = set([])
+		db_graph = {}
 		#Find All Intersection
+		for sn1,pts1 in self.db.iteritems():
+			for i in xrange(len(pts1)-1):
+				temp = []
+				for sn2,pts2 in self.db.iteritems():
+					if sn1 != sn2:
+						for j in xrange(len(pts2)-1):
+								iresult = intersection(pts1[i],pts1[i+1],pts2[j],pts2[j+1])
+								if iresult is not None:
+									self.intersections.add(iresult)
+									temp.append(iresult)
+			db_graph[sn1].extend(temp)
+								
 		#Find all vertex and edges
+		for i in xrange(len(intersections)-1):
+			self.vertices[i] = intersections.pop()
+			
+		for sn,intsecs in db_graph.iteritems():
+			last = 0
+			for i,intersec in enumerate(intersecs):
+				#if intersec not in self.vertices.values():
+					#self.vertices[
+				for j,vertex in self.vertices.iteritems():
+					if vertax == intersec and i > 0:
+						self.edges.add([j,last])
+					last = j
+						
+		#Output the graph
+		outstr = 'V = {\n'
+		for i,vertex in self.vertices.iteritems():
+			outstr += '{0}: {1}'.format(i,vertex)
+			
+		outstr += '}\nE = {\n'
+		for edge in self.edges:
+			outstr += '<{0},{1}>,\n'.format(edge[0],edge[1])
+		outstr = outstr[:-2] + '\n}'
+		print(outstr)
 		
 	def intersection(self,s1,d1,s2,d2):
 		x1, y1 = s1.x, s1.y
@@ -138,9 +175,15 @@ class CameraData(object):
 			xcoor =  xnum / xden
 			ycoor = ynum / yden
 		else: 
-			return errprt("Invalid Intersection Coordinates","Divide by zero")
-
-    		return point(xcoor, ycoor)
+			errprt('Invalid Intersection Coordinates','Divide by zero')
+			return None
+			
+		intersect = Point(xcoor, ycoor)
+			
+		if is_vertex(s1,d1,intersect) and is_vertex(s2,d2,intersect):
+    			return intersect
+    		else:
+    			return None
     		
     	def is_vertex(l1,l2,intsec):
     		x1, y1 = l1.x, l1.y
@@ -155,22 +198,16 @@ class CameraData(object):
 			b = y1-m*x1
 			if(yi = m*xi+b and xi<=max(x1,x2) and xi>=min(x1,x2) and yi<=max(y1,y2) and yi>=min(y1,y2):
 				return True
-				
 		return False
 
 	
 #Global Function
 #act like exception
 def errprt(msg,reason):
-	#TODO use exception instead
-	print("Error: {0}. Possible Reason: {1}".format(msg,reason))
+	stderr.write('Error: {0}. Possible Reason: {1}'.format(msg,reason))
 	
-def helpprt():
-	#TODO
-	print("HELP ME PLEASE")
-
 def initialization():
-	#menu = {"a","c","r","g"}
+	#menu = {'a','c','r','g'}
 	db = CaseInsensitiveDict({})
 	data = CameraData(db)
 	return data
@@ -178,7 +215,9 @@ def initialization():
 def main_loop(data):
 	is_quit = False
 	while not is_quit:
-		command = raw_input('>> ').strip()
+		command = stdin,readline().strip()
+		if command == '':
+			break
 		cmd_list = command.split(' ')
 		#for cmd in commands:
 		#	cmd_list = list.append(cmd)
@@ -194,7 +233,7 @@ def main_loop(data):
 		elif(cmd_list[0]=='q'):
 			is_quit = True
 		else:
-			errprt("Command [{0}] is not valid".format(cmd_list),"Wrong command name or incorrect arguments")
+			errprt('Command [{0}] is not valid'.format(cmd_list),'Wrong command name or incorrect arguments')
 	# return exit code 0 on successful termination
 	sys.exit(0)
 
