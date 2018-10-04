@@ -130,14 +130,21 @@ class CameraData(object):
 					if sn1 != sn2:
 						for j in xrange(len(pts2)-1):
 								iresult = self.intersection(pts1[i],pts1[i+1],pts2[j],pts2[j+1])
+								print("s1: {0} {1}".format(pts1[i],pts1[i+1]))
+								print("s2: {0} {1}".format(pts2[j],pts2[j+1]))
+								print(iresult)
+								
 								if iresult is not None:
-									self.intersections.add(iresult)
+									self.intersections.add((iresult.x,iresult.y))
 									temp.append(iresult)
+					else:
+						pass
 			db_graph[sn1] = (temp)
 								
 		#Find all vertex and edges
-		for i in xrange(len(self.intersections)-1):
-			self.vertices[i] = self.intersections.pop()
+		for i in xrange(1,len(self.intersections)+1):
+			tmp=self.intersections.pop()
+			self.vertices[i] = Point(tmp[0],tmp[1])
 			
 		for sn,intersecs in db_graph.iteritems():
 			last = 0
@@ -152,11 +159,11 @@ class CameraData(object):
 		#Output the graph
 		outstr = 'V = {\n'
 		for i,vertex in self.vertices.iteritems():
-			outstr += '{0}: {1}\n'.format(i,vertex)
+			outstr += '  {0}: {1}\n'.format(i,vertex)
 			
-		outstr += '}\nE = {\n'
+		outstr += '}\nE = { \n'
 		for edge in self.edges:
-			outstr += '<{0},{1}>,\n'.format(edge[0],edge[1])
+			outstr += '  <{0},{1}>,\n'.format(edge[0],edge[1])
 		outstr = outstr[:-2] + '\n}'
 		print(outstr)
 		
@@ -165,11 +172,12 @@ class CameraData(object):
 		x2, y2 = d1.x, d1.y
 		x3, y3 = s2.x, s2.y
 		x4, y4 = d2.x, d2.y
+		
+		
 
 		xnum = ((x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4))
 		xden = ((x1-x2)*(y3-y4) - (y1-y2)*(x3-x4))
 		
-
 		ynum = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
 		yden = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
 		
