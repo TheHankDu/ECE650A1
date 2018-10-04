@@ -34,11 +34,19 @@ class CaseInsensitiveDict(dict):
 		for k in list(self.keys()):
 			v = super(CaseInsensitiveDict, self).pop(k)
 			self.__setitem__(k, v)
+			
+class Point(object):
+	def __init__(self,x,y):
+		self.x = float(x)
+		self.y = float(y)
+		
+	def __repr__(self):
+		return "({0:.2f},{1:.2f})".format(self.x,self.y)
 
 #Data Processing Class
 class CameraData(object):
 	def __init__(self,db={}):
-		self.re_vertex = re.compile(r'\(-?[0-9 ]+,-?[0-9 ]+\)')
+		self.re_coordinate = re.compile(r'\(-?[0-9 ]+,-?[0-9 ]+\)')
 		self.re_street = re.compile(r'\"[a-z ]+\"',re.I)
 		self.db = db
 		
@@ -53,7 +61,7 @@ class CameraData(object):
 		if sresult != None:
 			street = sresult.group().strip('"')
 			if not self.db.has_key(street):
-				vertex_list = []
+				coordinate_list = []
 			else:
 				errprt("Invalid 'add' Command","Street Exists in system")
 				return
@@ -61,26 +69,32 @@ class CameraData(object):
 			errprt("Invalid 'add' Command","Cannot find street name")
 			return
 		
-		vresult = self.re_vertex.search(arg)
+		vresult = self.re_coordinate.search(arg)
 		if vresult != None:
-			vertex_list.extend(self.re_vertex.findall(arg.replace(' ',"")))
-			print(vertex_list)
+			tmp_list.extend(self.re_coordinate.findall(arg.replace(' ',"")))
+			for coordinate in tmp_list:
+				x,y = coordinate.replace('(','').replace(')','').split(',')
+				coordinate_list.extend(Point(x,y))
+			print(coordinate_list)
 		else:
 			errprt("Invalid 'add' Command","The format of argument {0} is invalid".format(arg))
 			return
 				
-		self.db[street] = vertex_list
+		self.db[street] = coordinate_list
 
 	def change(self, arg):
 		sresult = self.re_street.match(arg,2)
 		if sresult != None:
 			street = sresult.group().strip('"')
 			if self.db.has_key(street):
-				vertex_list = []
-				vresult = self.re_vertex.search(arg)
+				coordinate_list = []
+				vresult = self.re_coordinate.search(arg)
 				if vresult != None:
-					vertex_list.extend(self.re_vertex.findall(arg.replace(' ',"")))
-					self.db[street] = vertex_list
+					tmp_list.extend(self.re_coordinate.findall(arg.replace(' ',"")))
+					for coordinate in tmp_list:
+						x,y = coordinate.replace('(','').replace(')','').split(',')
+						coordinate_list.extend(Point(x,y))
+					self.db[street] = coordinate_list
 				else:
 					errprt("Invalid 'change' Command","The format of argument {0} is invalid".format(arg))
 					return
@@ -104,7 +118,45 @@ class CameraData(object):
 			errprt("Invalid Argument", "Format for remove argument is invalid")
 
 	def graph(self):
-		print()
+		#Find All Intersection
+		#Find all vertex and edges
+		
+	def intersection(self,s1,d1,s2,d2):
+		x1, y1 = s1.x, s1.y
+		x2, y2 = d1.x, d1.y
+		x3, y3 = s2.x, s2.y
+		x4, y4 = d2.x, d2.y
+
+		xnum = ((x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4))
+		xden = ((x1-x2)*(y3-y4) - (y1-y2)*(x3-x4))
+		
+
+		ynum = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
+		yden = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+		
+		if xden!=0 and yden!=0:
+			xcoor =  xnum / xden
+			ycoor = ynum / yden
+		else: 
+			return errprt("Invalid Intersection Coordinates","Divide by zero")
+
+    		return point(xcoor, ycoor)
+    		
+    	def is_vertex(l1,l2,intsec):
+    		x1, y1 = l1.x, l1.y
+		x2, y2 = l2.x, l2.y
+		xi, yi = intsec.x, intsec.y
+		
+		if x1==x2:
+			if(xi==x1 and yi<=max(y1,y2) and yi>=min(y1,y2)):
+				return True
+		else:
+			m = (y2-y1)/(x2-x1)
+			b = y1-m*x1
+			if(yi = m*xi+b and xi<=max(x1,x2) and xi>=min(x1,x2) and yi<=max(y1,y2) and yi>=min(y1,y2):
+				return True
+				
+		return False
 
 	
 #Global Function
@@ -131,13 +183,13 @@ def main_loop(data):
 		#for cmd in commands:
 		#	cmd_list = list.append(cmd)
 		
-		if((cmd_list[0]=='a') & (len(cmd_list)>2)):
+		if((cmd_list[0]=='a') and (len(cmd_list)>2)):
 			data.add(command)
-		elif((cmd_list[0]=='c') & (len(cmd_list)>2)):
+		elif((cmd_list[0]=='c') and (len(cmd_list)>2)):
 			data.change(command)
 		elif(cmd_list[0]=='r'):
 			data.remove(command)
-		elif((cmd_list[0]=='g') & (len(cmd_list)==1)):
+		elif((cmd_list[0]=='g') and (len(cmd_list)==1)):
 			data.graph()
 		elif(cmd_list[0]=='q'):
 			is_quit = True
