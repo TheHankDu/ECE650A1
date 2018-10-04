@@ -56,6 +56,7 @@ class CameraData(object):
 		
 	
 	def add(self, arg):
+		tmp_list = []
 		sresult = self.re_street.match(arg,2)
 		
 		if sresult != None:
@@ -63,10 +64,10 @@ class CameraData(object):
 			if not self.db.has_key(street):
 				coordinate_list = []
 			else:
-				errprt('Invalid 'add' Command','Street Exists in system')
+				errprt('Invalid add Command','Street Exists in system')
 				return
 		else:
-			errprt('Invalid 'add' Command','Cannot find street name')
+			errprt('Invalid add Command','Cannot find street name')
 			return
 		
 		vresult = self.re_coordinate.search(arg)
@@ -74,15 +75,15 @@ class CameraData(object):
 			tmp_list.extend(self.re_coordinate.findall(arg.replace(' ','')))
 			for coordinate in tmp_list:
 				x,y = coordinate.replace('(','').replace(')','').split(',')
-				coordinate_list.extend(Point(x,y))
-			print(coordinate_list)
+				coordinate_list.append(Point(x,y))
 		else:
-			errprt('Invalid 'add' Command','The format of argument {0} is invalid'.format(arg))
+			errprt('Invalid add Command','The format of argument {0} is invalid'.format(arg))
 			return
 				
 		self.db[street] = coordinate_list
 
 	def change(self, arg):
+		tmp_list = []
 		sresult = self.re_street.match(arg,2)
 		if sresult != None:
 			street = sresult.group().strip('"')
@@ -93,10 +94,10 @@ class CameraData(object):
 					tmp_list.extend(self.re_coordinate.findall(arg.replace(' ','')))
 					for coordinate in tmp_list:
 						x,y = coordinate.replace('(','').replace(')','').split(',')
-						coordinate_list.extend(Point(x,y))
+						coordinate_list.append(Point(x,y))
 					self.db[street] = coordinate_list
 				else:
-					errprt('Invalid 'change' Command','The format of argument {0} is invalid'.format(arg))
+					errprt('Invalid change Command','The format of argument {0} is invalid'.format(arg))
 					return
 			else:
 				errprt('Street Not Found','Street {0} does NOT exist in the system or it has already been removed'.format(street))
@@ -119,6 +120,7 @@ class CameraData(object):
 	def graph(self):
 		self.intersections = set([])
 		self.edges = set([])
+		temp =[]
 		db_graph = {}
 		#Find All Intersection
 		for sn1,pts1 in self.db.iteritems():
@@ -127,30 +129,30 @@ class CameraData(object):
 				for sn2,pts2 in self.db.iteritems():
 					if sn1 != sn2:
 						for j in xrange(len(pts2)-1):
-								iresult = intersection(pts1[i],pts1[i+1],pts2[j],pts2[j+1])
+								iresult = self.intersection(pts1[i],pts1[i+1],pts2[j],pts2[j+1])
 								if iresult is not None:
 									self.intersections.add(iresult)
 									temp.append(iresult)
-			db_graph[sn1].extend(temp)
+			db_graph[sn1] = (temp)
 								
 		#Find all vertex and edges
-		for i in xrange(len(intersections)-1):
-			self.vertices[i] = intersections.pop()
+		for i in xrange(len(self.intersections)-1):
+			self.vertices[i] = self.intersections.pop()
 			
-		for sn,intsecs in db_graph.iteritems():
+		for sn,intersecs in db_graph.iteritems():
 			last = 0
 			for i,intersec in enumerate(intersecs):
 				#if intersec not in self.vertices.values():
 					#self.vertices[
 				for j,vertex in self.vertices.iteritems():
-					if vertax == intersec and i > 0:
-						self.edges.add([j,last])
+					if vertex == intersec and i > 0:
+						self.edges.add((j,last))
 					last = j
 						
 		#Output the graph
 		outstr = 'V = {\n'
 		for i,vertex in self.vertices.iteritems():
-			outstr += '{0}: {1}'.format(i,vertex)
+			outstr += '{0}: {1}\n'.format(i,vertex)
 			
 		outstr += '}\nE = {\n'
 		for edge in self.edges:
@@ -180,12 +182,12 @@ class CameraData(object):
 			
 		intersect = Point(xcoor, ycoor)
 			
-		if is_vertex(s1,d1,intersect) and is_vertex(s2,d2,intersect):
+		if self.is_vertex(s1,d1,intersect) and self.is_vertex(s2,d2,intersect):
     			return intersect
     		else:
     			return None
     		
-    	def is_vertex(l1,l2,intsec):
+    	def is_vertex(self,l1,l2,intsec):
     		x1, y1 = l1.x, l1.y
 		x2, y2 = l2.x, l2.y
 		xi, yi = intsec.x, intsec.y
@@ -196,7 +198,7 @@ class CameraData(object):
 		else:
 			m = (y2-y1)/(x2-x1)
 			b = y1-m*x1
-			if(yi = m*xi+b and xi<=max(x1,x2) and xi>=min(x1,x2) and yi<=max(y1,y2) and yi>=min(y1,y2):
+			if(yi == m*xi+b and xi<=max(x1,x2) and xi>=min(x1,x2) and yi<=max(y1,y2) and yi>=min(y1,y2)):
 				return True
 		return False
 
@@ -204,10 +206,9 @@ class CameraData(object):
 #Global Function
 #act like exception
 def errprt(msg,reason):
-	stderr.write('Error: {0}. Possible Reason: {1}'.format(msg,reason))
+	sys.stderr.write('Error: {0}. Possible Reason: {1}\n'.format(msg,reason))
 	
 def initialization():
-	#menu = {'a','c','r','g'}
 	db = CaseInsensitiveDict({})
 	data = CameraData(db)
 	return data
@@ -215,7 +216,7 @@ def initialization():
 def main_loop(data):
 	is_quit = False
 	while not is_quit:
-		command = stdin,readline().strip()
+		command = sys.stdin.readline().strip()
 		if command == '':
 			break
 		cmd_list = command.split(' ')
