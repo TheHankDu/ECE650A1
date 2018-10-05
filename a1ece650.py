@@ -140,6 +140,7 @@ class CameraData(object):
 					else:
 						pass
 			db_graph[sn1] = (temp)
+			
 								
 		#Find all vertex and edges
 		for i in xrange(1,len(self.intersections)+1):
@@ -152,7 +153,7 @@ class CameraData(object):
 				#if intersec not in self.vertices.values():
 					#self.vertices[
 				for j,vertex in self.vertices.iteritems():
-					if vertex == intersec and i > 0:
+					if vertex == intersec:
 						self.edges.add((j,last))
 					last = j
 						
@@ -172,8 +173,19 @@ class CameraData(object):
 		x2, y2 = d1.x, d1.y
 		x3, y3 = s2.x, s2.y
 		x4, y4 = d2.x, d2.y
+		coords = [s1,d1,s2,d2]
 		
+		x_range = (max(min(x1,x2),min(x3,x4)),min(max(x1,x2),(max(x3,x4))))
+		y_range = (max(min(y1,y2),min(y3,y4)),min(max(y1,y2),(max(y3,y4))))
 		
+		if x1!=x2 and x3!=x4:
+			m1 = (y2-y1)/(x2-x1)
+			m2 = (y4-y3)/(x4-x3)
+			b1 = y1-m1*x1
+			b2 = y3-m2*x3
+			for coord in coords:
+				if((x_range[0]<=coord.x<=x_range[1]) and (y_range[0]<=coord.y<=y_range[1])):
+					return coord
 
 		xnum = ((x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4))
 		xden = ((x1-x2)*(y3-y4) - (y1-y2)*(x3-x4))
